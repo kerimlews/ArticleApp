@@ -1,0 +1,69 @@
+const mongoose = require('mongoose')
+const Author = mongoose.model('Author')
+
+exports.author = function (req, res, next, id) {
+  Author.load(id, function (err, Author) {
+    if (err) return next(err)
+    if (!Author) return next(new Error('Failed to load author ' + id))
+    req.Author = Author
+    next()
+  })
+}
+
+exports.create = function (req, res, next) {
+  const author = new Author(req.body)
+  author.user = req.user
+
+  author.save(function (err) {
+    if (err) {
+      return next(err)
+    }
+
+    res.send(author)
+  })
+}
+
+exports.update = function (req, res, next) {
+  Author
+    .findByIdAndUpdate(req.params.authorId, {
+      $set: req.body
+    }, {
+      new: true
+    }, function (err, Author) {
+      if (err) {
+        return next(err)
+      }
+
+      res.send(Author)
+    })
+}
+
+exports.destroy = function (req, res, next) {
+  const author = req.Author
+
+  author.remove(function (err) {
+    if (err) {
+      return next(err)
+    }
+
+    res.send(author)
+  })
+}
+
+exports.show = function (req, res) {
+  res.send(req.Author)
+}
+
+exports.all = function (req, res, next) {
+  Author
+    .find()
+    .sort('-created')
+    .populate('user')
+    .exec(function (err, Authors) {
+      if (err) {
+        return next(err)
+      }
+
+      res.send(Authors)
+    })
+}
